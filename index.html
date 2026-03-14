@@ -118,7 +118,7 @@
             <p>You're a tiny sperm! Swim fast to reach the egg!</p>
             <p>Use ⬅️ ➡️ ⬆️ ⬇️ arrow keys or joystick to move</p>
             <p>Avoid the white blood cells! ❌</p>
-            <button onclick="startGame()">START!</button>
+            <button id="startBtn" onclick="startGame()">START!</button>
         </div>
         <div id="joystickBase">
             <div id="joystickKnob"></div>
@@ -825,6 +825,12 @@
         if ('ontouchstart' in window) {
             createJoystick();
         }
+
+        // Fix for iOS touch events on button
+        document.getElementById('startBtn').addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            startGame();
+        });
     </script>
 </body>
 </html>
