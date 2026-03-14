@@ -340,6 +340,8 @@
             // Draw a growing baby based on babyDay
             const centerX = 400;
             const centerY = 300;
+            
+            if (birthPhase === 'growing') {
 
             // Uterus background
             ctx.fillStyle = '#ffb6c1';
@@ -651,6 +653,7 @@
             ctx.fillText("Welcome, baby! 🎉", centerX, 550);
             ctx.font = '20px Comic Sans MS';
             ctx.fillText("The mom is greeting her little one! 💖", centerX, 580);
+        }
         }
 
         function update() {
