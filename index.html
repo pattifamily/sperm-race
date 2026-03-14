@@ -140,6 +140,9 @@
         let progress = 0;
         let keys = {};
         let babyStartTime = null;
+        let birthStartTime = null;
+        let momStartTime = null;
+        let birthPhase = 'growing'; // 'growing', 'born', 'momHolding'
 
         // Colors
         const PINK = '#ff69b4';
@@ -163,6 +166,9 @@
             showBaby = false;
             babyDay = 0;
             babyStartTime = null;
+            birthStartTime = null;
+            momStartTime = null;
+            birthPhase = 'growing';
 
             // Create obstacles
             for (let i = 0; i < 12; i++) {
@@ -473,6 +479,178 @@
                 ctx.fillText("Baby is almost ready! 🎉", centerX, 520);
             }
 
+        } else if (birthPhase === 'born') {
+            // Birth animation - baby sliding out
+            const birthElapsed = (Date.now() - birthStartTime) / 1000;
+            const birthProgress = Math.min(1, birthElapsed / 2); // 2 seconds for birth
+            
+            // Darker background for birth canal
+            ctx.fillStyle = '#8B4557';
+            ctx.fillRect(0, 0, 800, 600);
+            
+            // Birth canal / hole
+            ctx.fillStyle = '#5a2a3a';
+            ctx.beginPath();
+            ctx.ellipse(400, 600, 80, 150, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Baby sliding out
+            const babyY = 200 + birthProgress * 280;
+            const babySize = 35;
+            
+            // Baby head
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.arc(400, babyY, babySize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Baby body
+            ctx.beginPath();
+            ctx.ellipse(400, babyY + 45, 25, 30, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Baby face
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(390, babyY - 5, 4, 0, Math.PI * 2);
+            ctx.arc(410, babyY - 5, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Smile
+            ctx.strokeStyle = '#ff69b4';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(400, babyY + 2, 6, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+            
+            // Birth message
+            ctx.fillStyle = '#fff';
+            ctx.font = '28px Comic Sans MS';
+            ctx.textAlign = 'center';
+            if (birthProgress < 1) {
+                ctx.fillText("It's a birth! 👶", centerX, 80);
+            } else {
+                birthPhase = 'momHolding';
+                momStartTime = Date.now();
+            }
+            
+        } else if (birthPhase === 'momHolding') {
+            // Mom holding the baby
+            const momElapsed = (Date.now() - momStartTime) / 1000;
+            
+            // Nice bedroom background
+            const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+            gradient.addColorStop(0, '#ffe4e1');
+            gradient.addColorStop(1, '#ffb6c1');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 800, 600);
+            
+            // Window with stars
+            ctx.fillStyle = '#4a4a6a';
+            ctx.fillRect(100, 50, 150, 150);
+            ctx.fillStyle = '#fff';
+            for (let i = 0; i < 10; i++) {
+                const sx = 110 + Math.random() * 130;
+                const sy = 60 + Math.random() * 130;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Mom (simplified)
+            const momX = 400;
+            const momY = 350;
+            
+            // Mom's body/dress
+            ctx.fillStyle = '#ff69b4';
+            ctx.beginPath();
+            ctx.moveTo(momX - 60, momY + 80);
+            ctx.lineTo(momX - 100, 600);
+            ctx.lineTo(momX + 100, 600);
+            ctx.lineTo(momX + 60, momY + 80);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Mom's arms holding baby
+            ctx.strokeStyle = '#ffdbac';
+            ctx.lineWidth = 20;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(momX - 50, momY + 30);
+            ctx.lineTo(momX - 25, momY + 80);
+            ctx.moveTo(momX + 50, momY + 30);
+            ctx.lineTo(momX + 25, momY + 80);
+            ctx.stroke();
+            
+            // Baby in mom's arms
+            const babyBob = Math.sin(momElapsed * 3) * 5;
+            
+            // Baby
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.arc(momX, momY + 70 + babyBob, 30, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(momX, momY + 100 + babyBob, 20, 25, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Baby face
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(momX - 8, momY + 65 + babyBob, 3, 0, Math.PI * 2);
+            ctx.arc(momX + 8, momY + 65 + babyBob, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ff69b4';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(momX, momY + 75 + babyBob, 5, 0, Math.PI);
+            ctx.stroke();
+            
+            // Baby hat
+            ctx.fillStyle = '#87ceeb';
+            ctx.beginPath();
+            ctx.arc(momX, momY + 45 + babyBob, 15, Math.PI, 0);
+            ctx.fill();
+            
+            // Mom's face
+            ctx.fillStyle = '#ffdbac';
+            ctx.beginPath();
+            ctx.arc(momX, momY - 30, 35, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Mom's happy eyes
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(momX - 12, momY - 35, 4, 0, Math.PI * 2);
+            ctx.arc(momX + 12, momY - 35, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Mom's big smile
+            ctx.strokeStyle = '#ff69b4';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(momX, momY - 25, 12, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+            
+            // Mom's hair
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.arc(momX, momY - 45, 30, Math.PI, 0);
+            ctx.fill();
+            
+            // Hearts floating
+            ctx.fillStyle = '#ff69b4';
+            ctx.font = '24px Arial';
+            const heart1Y = 150 - (momElapsed * 30) % 100;
+            ctx.fillText('💕', 280, heart1Y);
+            ctx.fillText('💗', 500, heart1Y + 20);
+            
+            // Celebration message
+            ctx.fillStyle = '#ff1493';
+            ctx.font = 'bold 32px Comic Sans MS';
+            ctx.fillText("Welcome, baby! 🎉", centerX, 550);
+            ctx.font = '20px Comic Sans MS';
+            ctx.fillText("The mom is greeting her little one! 💖", centerX, 580);
         }
 
         function update() {
@@ -482,6 +660,10 @@
             if (babyDay < 280 && babyStartTime) {
                 const elapsed = (Date.now() - babyStartTime) / 1000;
                 babyDay = Math.min(280, (elapsed / 10) * 280);
+                if (babyDay >= 280 && birthPhase === 'growing') {
+                    birthPhase = 'born';
+                    birthStartTime = Date.now();
+                }
             }
 
             if (showBaby) {
