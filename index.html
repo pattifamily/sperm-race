@@ -139,6 +139,7 @@
         let sperm, egg, obstacles, particles;
         let progress = 0;
         let keys = {};
+        let babyStartTime = null;
 
         // Colors
         const PINK = '#ff69b4';
@@ -161,6 +162,7 @@
             gameWon = false;
             showBaby = false;
             babyDay = 0;
+            babyStartTime = null;
 
             // Create obstacles
             for (let i = 0; i < 12; i++) {
@@ -471,9 +473,10 @@
                 ctx.fillText("Baby is almost ready! 🎉", centerX, 520);
             }
 
-            // Speed control
-            if (babyDay < 280) {
-                babyDay += 0.3;
+            // Speed control - grow from day 0 to 280 in 10 seconds
+            if (babyDay < 280 && babyStartTime) {
+                const elapsed = (Date.now() - babyStartTime) / 1000; // seconds
+                babyDay = Math.min(280, (elapsed / 10) * 280);
             }
         }
 
@@ -535,6 +538,7 @@
             if (dist < egg.radius + sperm.size + 10) {
                 gameWon = true;
                 showBaby = true;
+                if (!babyStartTime) babyStartTime = Date.now();
                 messageEl.style.display = 'block';
                 messageEl.innerHTML = '🎉 YOU DID IT! 🎉<br>You reached the egg!';
                 setTimeout(() => {
