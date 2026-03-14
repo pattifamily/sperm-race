@@ -162,6 +162,7 @@
         let birthStartTime = null;
         let momStartTime = null;
         let birthPhase = 'growing'; // 'growing', 'born', 'momHolding'
+        let hasSpinaBifida = false;
 
         // Colors
         const PINK = '#ff69b4';
@@ -188,6 +189,7 @@
             birthStartTime = null;
             momStartTime = null;
             birthPhase = 'growing';
+            hasSpinaBifida = false;
 
             // Create obstacles
             for (let i = 0; i < 12; i++) {
@@ -546,10 +548,14 @@
             
             // Birth message
             ctx.fillStyle = '#fff';
-            ctx.font = '28px Comic Sans MS';
+            ctx.font = 'clamp(18px, 4vw, 28px) Comic Sans MS';
             ctx.textAlign = 'center';
             if (birthProgress < 1) {
-                ctx.fillText("It's a birth! 👶", centerX, 80);
+                if (hasSpinaBifida) {
+                    ctx.fillText("It's a baby with spina bifida! 💚", centerX, 80);
+                } else {
+                    ctx.fillText("It's a birth! 👶", centerX, 80);
+                }
             } else {
                 birthPhase = 'momHolding';
                 momStartTime = Date.now();
@@ -615,6 +621,23 @@
             ctx.ellipse(momX, momY + 100 + babyBob, 20, 25, 0, 0, Math.PI * 2);
             ctx.fill();
             
+            // Show spina bifida indicator (small patch on back)
+            if (hasSpinaBifida) {
+                ctx.fillStyle = '#f5deb3'; // bandage color
+                ctx.beginPath();
+                ctx.ellipse(momX - 25, momY + 90 + babyBob, 12, 8, 0.3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#d2b48c';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                // Small dots on bandage
+                ctx.fillStyle = '#8b7355';
+                ctx.beginPath();
+                ctx.arc(momX - 28, momY + 88 + babyBob, 2, 0, Math.PI * 2);
+                ctx.arc(momX - 22, momY + 92 + babyBob, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
             // Baby face
             ctx.fillStyle = '#333';
             ctx.beginPath();
@@ -668,10 +691,15 @@
             
             // Celebration message
             ctx.fillStyle = '#ff1493';
-            ctx.font = 'bold 32px Comic Sans MS';
+            ctx.font = 'bold clamp(20px, 4vw, 32px) Comic Sans MS';
             ctx.fillText("Welcome, baby! 🎉", centerX, 550);
-            ctx.font = '20px Comic Sans MS';
-            ctx.fillText("The mom is greeting her little one! 💖", centerX, 580);
+            ctx.font = 'clamp(14px, 2.5vw, 20px) Comic Sans MS';
+            if (hasSpinaBifida) {
+                ctx.fillText("Some babies are born with spina bifida 💚", centerX, 580);
+                ctx.fillText("But moms love their babies no matter what! 💖", centerX, 600);
+            } else {
+                ctx.fillText("The mom is greeting her little one! 💖", centerX, 580);
+            }
         }
         }
 
@@ -685,6 +713,8 @@
                 if (babyDay >= 280 && birthPhase === 'growing') {
                     birthPhase = 'born';
                     birthStartTime = Date.now();
+                    // 10% chance of spina bifida - educational fact
+                    hasSpinaBifida = Math.random() < 0.1;
                 }
             }
 
