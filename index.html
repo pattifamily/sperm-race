@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Race to the Egg! 🏊</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            overflow: hidden;
+        }
+        #gameContainer {
+            position: relative;
+        }
+        canvas {
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(255, 105, 180, 0.5);
+        }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 32px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            display: none;
+        }
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px;
+        }
+        h1 {
+            color: #ff69b4;
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+        }
+        p {
+            color: white;
+            font-size: 20px;
+        }
+        button {
+            background: linear-gradient(45deg, #ff69b4, #ff1493);
+            border: none;
+            padding: 15px 40px;
+            font-size: 24px;
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+            font-family: inherit;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui">Distance: <span id="distance">100</span>%</div>
+        <div id="message"></div>
+        <div id="startScreen">
+            <h1>🏊 Race to the Egg! 🏊</h1>
+            <p>You're a tiny sperm! Swim fast to reach the egg!</p>
+            <p>Use ⬅️ ➡️ ⬆️ ⬇️ arrow keys to move</p>
+            <p>Avoid the white blood cells! ❌</p>
+            <button onclick="startGame()">START!</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const messageEl = document.getElementById('message');
+        const distanceEl = document.getElementById('distance');
+        const startScreen = document.getElementById('startScreen');
+
+        let gameRunning = false;
+        let gameWon = false;
+        let showBaby = false;
+        let babyDay = 0;
+        let sperm, egg, obstacles, particles;
+        let progress = 0;
+        let keys = {};
+
+        // Colors
+        const PINK = '#ff69b4';
+        const LIGHT_PINK = '#ffb6c1';
+        const CREAM = '#fffdd0';
+
+        function init() {
+            sperm = {
+                x: 400,
+                y: 550,
+                vx: 0,
+                vy: 0,
+                tailAngle: 0,
+                size: 15
+            };
+            egg = { x: 400, y: 80, radius: 35 };
+            obstacles = [];
+            particles = [];
+            progress = 0;
+            gameWon = false;
+            showBaby = false;
+            babyDay = 0;
+
+            // Create obstacles
+            for (let i = 0; i < 12; i++) {
+                obstacles.push({
+                    x: Math.random() * 700 + 50,
+                    y: 150 + Math.random() * 400,
+                    radius: 20 + Math.random() * 15,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    type: 'whiteBloodCell'
+                });
+            }
+        }
+
+        function drawBackground() {
+            // Fallopian tube background
+            const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+            gradient.addColorStop(0, '#ffb6c1');
+            gradient.addColorStop(0.5, '#ffc0cb');
+            gradient.addColorStop(1, '#ff69b4');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 800, 600);
+
+            // Tube walls
+            ctx.strokeStyle = '#db7093';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(50, 0);
+            ctx.bezierCurveTo(30, 200, 60, 400, 50, 600);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(750, 0);
+            ctx.bezierCurveTo(770, 200, 740, 400, 750, 600);
+            ctx.stroke();
+        }
+
+        function drawSperm() {
+            ctx.save();
+            ctx.translate(sperm.x, sperm.y);
+            
+            // Tail
+            ctx.strokeStyle = '#ffb6c1';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            const tailWag = Math.sin(sperm.tailAngle) * 10;
+            ctx.quadraticCurveTo(tailWag, 15, tailWag * 1.5, 30);
+            ctx.stroke();
+
+            // Head (oval)
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, sperm.size, sperm.size * 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffb6c1';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Cute face
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(-4, -2, 2, 0, Math.PI * 2);
+            ctx.arc(4, -2, 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = '#ff69b4';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 3, 4, 0, Math.PI);
+            ctx.stroke();
+
+            ctx.restore();
+            sperm.tailAngle += 0.5;
+        }
+
+        function drawEgg() {
+            if (progress < 100) {
+                ctx.save();
+                ctx.translate(egg.x, egg.y);
+
+                // Glow
+                const glow = ctx.createRadialGradient(0, 0, egg.radius * 0.5, 0, 0, egg.radius * 1.5);
+                glow.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                glow.addColorStop(1, 'rgba(255, 182, 193, 0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(0, 0, egg.radius * 1.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Egg
+                const eggGrad = ctx.createRadialGradient(-10, -10, 0, 0, 0, egg.radius);
+                eggGrad.addColorStop(0, '#fff5f5');
+                eggGrad.addColorStop(0.7, '#ffb6c1');
+                eggGrad.addColorStop(1, '#ff69b4');
+                ctx.fillStyle = eggGrad;
+                ctx.beginPath();
+                ctx.arc(0, 0, egg.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Shine
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.beginPath();
+                ctx.ellipse(-12, -12, 8, 5, -0.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Cute face
+                ctx.fillStyle = '#333';
+                ctx.beginPath();
+                ctx.arc(-8, -2, 3, 0, Math.PI * 2);
+                ctx.arc(8, -2, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#ff69b4';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, 6, 6, 0, Math.PI);
+                ctx.stroke();
+
+                // "I'm waiting!" text
+                ctx.fillStyle = '#ff1493';
+                ctx.font = '14px Comic Sans MS';
+                ctx.textAlign = 'center';
+                ctx.fillText("Come on!", 0, -45);
+
+                ctx.restore();
+            }
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(obs => {
+                ctx.save();
+                ctx.translate(obs.x, obs.y);
+
+                // White blood cell - bumpy circle
+                ctx.fillStyle = '#f0f0f0';
+                ctx.strokeStyle = '#ccc';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const r = obs.radius + Math.sin(angle * 4 + Date.now() / 200) * 3;
+                    const x = Math.cos(angle) * r;
+                    const y = Math.sin(angle) * r;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Mean face
+                ctx.fillStyle = '#666';
+                ctx.beginPath();
+                ctx.arc(-5, -3, 3, 0, Math.PI * 2);
+                ctx.arc(5, -3, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, 5, 5, Math.PI, 0);
+                ctx.stroke();
+
+                ctx.restore();
+            });
+        }
+
+        function drawBaby() {
+            // Draw a growing baby based on babyDay
+            const centerX = 400;
+            const centerY = 300;
+
+            // Uterus background
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY, 300, 250, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffc0cb';
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY, 280, 230, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Day indicator
+            ctx.fillStyle = '#ff1493';
+            ctx.font = 'bold 24px Comic Sans MS';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Day ${Math.floor(babyDay)}`, centerX, 60);
+
+            const babyProgress = babyDay / 280;
+            
+            // Placenta
+            ctx.fillStyle = '#e8a0b0';
+            ctx.beginPath();
+            ctx.arc(centerX + 180, centerY, 60, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#d490a0';
+            ctx.beginPath();
+            ctx.arc(centerX + 180, centerY, 40, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Umbilical cord
+            ctx.strokeStyle = '#ff69b4';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(centerX + 180, centerY);
+            ctx.quadraticCurveTo(centerX + 100, centerY + 50, centerX, centerY);
+            ctx.stroke();
+
+            // Baby size based on day
+            let babySize = 5 + babyProgress * 60;
+
+            if (babyProgress < 0.1) {
+                // First few weeks - just a cluster
+                ctx.fillStyle = '#ffb6c1';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, babySize, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ff69b4';
+                ctx.font = '16px Comic Sans MS';
+                ctx.fillText("Growing...", centerX, centerY + 30);
+            } else if (babyProgress < 0.3) {
+                // Embryo - beginning to form
+                // Head
+                ctx.fillStyle = '#ffb6c1';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY - 10, babySize * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+                // Body
+                ctx.beginPath();
+                ctx.arc(centerX, centerY + 15, babySize * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (babyProgress < 0.6) {
+                // Fetus - more defined
+                // Head
+                ctx.fillStyle = '#ffb6c1';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY - 20, babySize * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+                // Body
+                ctx.beginPath();
+                ctx.ellipse(centerX, centerY + 20, babySize * 0.4, babySize * 0.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // Eyes
+                ctx.fillStyle = '#333';
+                ctx.beginPath();
+                ctx.arc(centerX - 8, centerY - 25, 3, 0, Math.PI * 2);
+                ctx.arc(centerX + 8, centerY - 25, 3, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Nearly full term - cute baby
+                // Head
+                ctx.fillStyle = '#ffb6c1';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY - 30, babySize * 0.45, 0, Math.PI * 2);
+                ctx.fill();
+                // Hair
+                ctx.fillStyle = '#8B4513';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY - 45, 8, Math.PI, Math.PI * 2);
+                ctx.fill();
+                // Body
+                ctx.beginPath();
+                ctx.ellipse(centerX, centerY + 20, babySize * 0.35, babySize * 0.45, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // Face
+                ctx.fillStyle = '#333';
+                ctx.beginPath();
+                ctx.arc(centerX - 10, centerY - 35, 4, 0, Math.PI * 2);
+                ctx.arc(centerX + 10, centerY - 35, 4, 0, Math.PI * 2);
+                ctx.fill();
+                // Smile
+                ctx.strokeStyle = '#ff69b4';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY - 28, 8, 0.2, Math.PI - 0.2);
+                ctx.stroke();
+                // Arms
+                ctx.strokeStyle = '#ffb6c1';
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                ctx.moveTo(centerX - 20, centerY);
+                ctx.lineTo(centerX - 40, centerY - 10);
+                ctx.moveTo(centerX + 20, centerY);
+                ctx.lineTo(centerX + 40, centerY - 10);
+                ctx.stroke();
+                // Legs
+                ctx.beginPath();
+                ctx.moveTo(centerX - 10, centerY + 40);
+                ctx.lineTo(centerX - 15, centerY + 60);
+                ctx.moveTo(centerX + 10, centerY + 40);
+                ctx.lineTo(centerX + 15, centerY + 60);
+                ctx.stroke();
+            }
+
+            // Show message based on progress
+            ctx.fillStyle = '#ff1493';
+            ctx.font = '20px Comic Sans MS';
+            if (babyDay < 30) {
+                ctx.fillText("The miracle of life begins!", centerX, 520);
+            } else if (babyDay < 90) {
+                ctx.fillText("All the parts are forming!", centerX, 520);
+            } else if (babyDay < 180) {
+                ctx.fillText("Baby is growing bigger!", centerX, 520);
+            } else if (babyDay < 250) {
+                ctx.fillText("Almost ready to meet the world!", centerX, 520);
+            } else {
+                ctx.fillText("Baby is almost ready! 🎉", centerX, 520);
+            }
+
+            // Speed control
+            if (babyDay < 280) {
+                babyDay += 0.3;
+            }
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            if (showBaby) {
+                drawBaby();
+                return;
+            }
+
+            // Move sperm with arrow keys
+            const speed = 5;
+            if (keys['ArrowUp'] || keys['w']) sperm.vy = -speed;
+            else if (keys['ArrowDown'] || keys['s']) sperm.vy = speed;
+            else sperm.vy *= 0.9;
+
+            if (keys['ArrowLeft'] || keys['a']) sperm.vx = -speed;
+            else if (keys['ArrowRight'] || keys['d']) sperm.vx = speed;
+            else sperm.vx *= 0.9;
+
+            sperm.x += sperm.vx;
+            sperm.y += sperm.vy;
+
+            // Keep in bounds
+            sperm.x = Math.max(60, Math.min(740, sperm.x));
+            sperm.y = Math.max(20, Math.min(580, sperm.y));
+
+            // Move obstacles
+            obstacles.forEach(obs => {
+                obs.x += obs.vx;
+                obs.y += obs.vy;
+                if (obs.x < 60 || obs.x > 740) obs.vx *= -1;
+                if (obs.y < 100 || obs.y > 580) obs.vy *= -1;
+
+                // Collision with sperm
+                const dx = sperm.x - obs.x;
+                const dy = sperm.y - obs.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < obs.radius + sperm.size) {
+                    // Hit! Reset position
+                    sperm.x = 400;
+                    sperm.y = 550;
+                    sperm.vx = 0;
+                    sperm.vy = 0;
+                    messageEl.style.display = 'block';
+                    messageEl.textContent = 'Ouch! Try again! 💥';
+                    setTimeout(() => {
+                        messageEl.style.display = 'none';
+                    }, 1000);
+                }
+            });
+
+            // Check if reached egg
+            const dx = sperm.x - egg.x;
+            const dy = sperm.y - egg.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < egg.radius + sperm.size + 10) {
+                gameWon = true;
+                showBaby = true;
+                messageEl.style.display = 'block';
+                messageEl.innerHTML = '🎉 YOU DID IT! 🎉<br>You reached the egg!';
+                setTimeout(() => {
+                    messageEl.style.display = 'none';
+                }, 3000);
+            }
+
+            // Update progress
+            progress = Math.min(100, Math.floor((1 - (sperm.y / 550)) * 100));
+            distanceEl.textContent = progress;
+
+            // Draw everything
+            drawBackground();
+            drawEgg();
+            drawObstacles();
+            drawSperm();
+
+            requestAnimationFrame(update);
+        }
+
+        function startGame() {
+            startScreen.style.display = 'none';
+            gameRunning = true;
+            init();
+            update();
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', e => {
+            keys[e.key] = true;
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+        document.addEventListener('keyup', e => keys[e.key] = false);
+
+        // Touch controls for mobile
+        let touchStartX, touchStartY;
+        canvas.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            const dx = e.touches[0].clientX - touchStartX;
+            const dy = e.touches[0].clientY - touchStartY;
+            if (Math.abs(dx) > 20) keys[dx > 0 ? 'ArrowRight' : 'ArrowLeft'] = true;
+            if (Math.abs(dy) > 20) keys[dy > 0 ? 'ArrowDown' : 'ArrowUp'] = true;
+        });
+        canvas.addEventListener('touchend', () => {
+            keys = {};
+        });
+    </script>
+</body>
+</html>
