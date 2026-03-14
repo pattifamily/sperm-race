@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Race to the Egg! 🏊</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
             margin: 0;
             background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%);
@@ -14,20 +17,26 @@
             min-height: 100vh;
             font-family: 'Comic Sans MS', cursive, sans-serif;
             overflow: hidden;
+            padding: 10px;
         }
         #gameContainer {
             position: relative;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 800 / 600;
         }
         canvas {
+            width: 100%;
+            height: 100%;
             border-radius: 20px;
             box-shadow: 0 0 40px rgba(255, 105, 180, 0.5);
         }
         #ui {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            top: 2%;
+            left: 2%;
             color: white;
-            font-size: 18px;
+            font-size: clamp(12px, 3vw, 18px);
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
         #message {
@@ -36,10 +45,11 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: white;
-            font-size: 32px;
+            font-size: clamp(18px, 5vw, 32px);
             text-align: center;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
             display: none;
+            padding: 10px;
         }
         #startScreen {
             position: absolute;
@@ -52,23 +62,32 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            padding: 20px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             border-radius: 20px;
         }
         h1 {
             color: #ff69b4;
-            font-size: 48px;
+            font-size: clamp(24px, 8vw, 48px);
             margin-bottom: 10px;
             text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+            text-align: center;
         }
         p {
             color: white;
-            font-size: 20px;
+            font-size: clamp(14px, 3vw, 20px);
+            text-align: center;
+            margin: 5px 0;
         }
         button {
             background: linear-gradient(45deg, #ff69b4, #ff1493);
             border: none;
-            padding: 15px 40px;
-            font-size: 24px;
+            padding: clamp(10px, 3vw, 15px) clamp(20px, 5vw, 40px);
+            font-size: clamp(16px, 4vw, 24px);
             color: white;
             border-radius: 30px;
             cursor: pointer;
@@ -84,10 +103,11 @@
         #joystickBase {
             display: none;
             position: absolute;
-            bottom: 30px;
-            left: 30px;
-            width: 100px;
-            height: 100px;
+            bottom: 5%;
+            left: 5%;
+            width: 15%;
+            max-width: 100px;
+            aspect-ratio: 1;
             background: rgba(255, 255, 255, 0.3);
             border: 3px solid rgba(255, 255, 255, 0.5);
             border-radius: 50%;
@@ -96,10 +116,10 @@
         #joystickKnob {
             display: none;
             position: absolute;
-            top: 25px;
-            left: 25px;
-            width: 50px;
-            height: 50px;
+            top: 25%;
+            left: 25%;
+            width: 50%;
+            aspect-ratio: 1;
             background: rgba(255, 105, 180, 0.8);
             border: 3px solid white;
             border-radius: 50%;
@@ -790,11 +810,14 @@
             if (!joystickActive) return;
             
             const touch = e.touches[0];
+            const rect = joystickBase.getBoundingClientRect();
+            const maxRadius = rect.width * 0.4;
+            const threshold = rect.width * 0.15;
+            
             let dx = touch.clientX - joystickCenter.x;
             let dy = touch.clientY - joystickCenter.y;
             
             // Limit to joystick radius
-            const maxRadius = 40;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist > maxRadius) {
                 dx = (dx / dist) * maxRadius;
@@ -806,10 +829,10 @@
             
             // Update keys based on joystick position
             keys = {};
-            if (dx < -15) keys['ArrowLeft'] = true;
-            if (dx > 15) keys['ArrowRight'] = true;
-            if (dy < -15) keys['ArrowUp'] = true;
-            if (dy > 15) keys['ArrowDown'] = true;
+            if (dx < -threshold) keys['ArrowLeft'] = true;
+            if (dx > threshold) keys['ArrowRight'] = true;
+            if (dy < -threshold) keys['ArrowUp'] = true;
+            if (dy > threshold) keys['ArrowDown'] = true;
         });
 
         joystickBase.addEventListener('touchend', e => {
