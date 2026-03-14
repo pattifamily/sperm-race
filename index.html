@@ -473,18 +473,20 @@
                 ctx.fillText("Baby is almost ready! 🎉", centerX, 520);
             }
 
-            // Speed control - grow from day 0 to 280 in 10 seconds
-            if (babyDay < 280 && babyStartTime) {
-                const elapsed = (Date.now() - babyStartTime) / 1000; // seconds
-                babyDay = Math.min(280, (elapsed / 10) * 280);
-            }
         }
 
         function update() {
             if (!gameRunning) return;
 
+            // Update baby growth even while showing it
+            if (babyDay < 280 && babyStartTime) {
+                const elapsed = (Date.now() - babyStartTime) / 1000;
+                babyDay = Math.min(280, (elapsed / 10) * 280);
+            }
+
             if (showBaby) {
                 drawBaby();
+                requestAnimationFrame(update);
                 return;
             }
 
